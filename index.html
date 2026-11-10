@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbit | Student Registry</title>
+    <style>
+        :root {
+            --ink: #17251f;
+            --muted: #718078;
+            --paper: #f4f6ef;
+            --green: #176b4a;
+            --lime: #d8f36a;
+            --line: #e5e9df;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+        button, input { font: inherit; }
+        .topbar { height: 76px; padding: 0 6vw; background: #fff; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+        .brand { display: flex; gap: 11px; align-items: center; font-weight: 800; letter-spacing: -.04em; }
+        .brand-mark { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 12px; background: var(--green); color: var(--lime); font-size: 20px; }
+        .top-label { color: var(--muted); font-size: 13px; }
+        main { max-width: 1120px; margin: 0 auto; padding: 48px 24px 64px; }
+        .intro { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 28px; }
+        .eyebrow { color: var(--green); text-transform: uppercase; font-weight: 800; font-size: 11px; letter-spacing: .15em; }
+        h1 { font-size: clamp(32px, 5vw, 48px); letter-spacing: -.055em; line-height: 1.05; margin: 10px 0; }
+        .intro p { margin: 0; color: var(--muted); }
+        .live-tag { white-space: nowrap; padding: 10px 14px; border-radius: 30px; background: #e5f2e9; color: var(--green); font-size: 12px; font-weight: 700; }
+        .live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #38a66c; margin-right: 7px; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+        .stat { background: white; padding: 20px 22px; border: 1px solid var(--line); border-radius: 16px; }
+        .stat-label { color: var(--muted); font-size: 12px; }
+        .stat-value { margin-top: 8px; font-size: 30px; font-weight: 800; letter-spacing: -.05em; }
+        .stat-detail { color: var(--green); font-size: 12px; margin-top: 3px; }
+        .workspace { display: grid; grid-template-columns: 330px 1fr; gap: 18px; align-items: start; }
+        .panel { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+        h2 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+        .panel-note { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 7px 0 22px; }
+        label { display: block; font-size: 12px; font-weight: 700; margin: 15px 0 7px; }
+        input { width: 100%; border: 1px solid #dce3d9; border-radius: 10px; padding: 12px; outline: none; background: #fcfdfb; }
+        input:focus { border-color: #69a486; box-shadow: 0 0 0 3px #176b4a14; }
+        .add-button { width: 100%; margin-top: 18px; padding: 12px; color: white; background: var(--green); border: 0; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        .add-button:hover { background: #10573b; }
+        .tiny-note { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 14px 0 0; }
+        .roster-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 17px; }
+        .search { max-width: 230px; padding: 10px 12px; }
+        .filter-label { display: block; margin: 15px 0 8px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+        .filters { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 17px; }
+        .filter { padding: 7px 11px; border: 1px solid var(--line); background: white; border-radius: 20px; color: var(--muted); font-size: 12px; cursor: pointer; }
+        .filter.active { background: var(--ink); color: white; border-color: var(--ink); }
+        .student-list { display: grid; gap: 9px; }
+        .student-card { border: 1px solid var(--line); border-radius: 13px; padding: 13px; display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border-radius: 13px; background: #eef3d6; color: #496019; font-weight: 800; }
+        .student-info { flex: 1; min-width: 0; }
+        .student-name { font-weight: 750; }
+        .student-uid { color: var(--muted); font-size: 11px; margin-top: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .section-pill { color: var(--green); background: #eaf4ed; border-radius: 20px; padding: 6px 10px; font-size: 11px; font-weight: 750; white-space: nowrap; }
+        .remove { border: 1px solid #ecd8d2; color: #914c3d; background: #fff9f7; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
+        .remove:hover { background: #fce9e4; }
+        .uid-input-note { color: var(--muted); font-size: 11px; margin-top: 6px; }
+        .empty { padding: 36px 12px; text-align: center; color: var(--muted); }
+        #message { min-height: 18px; margin-top: 10px; color: var(--green); font-size: 12px; }
+        @media (max-width: 760px) { main { padding: 32px 16px; } .workspace { grid-template-columns: 1fr; } .intro { align-items: start; flex-direction: column; } .stats { gap: 8px; } .stat { padding: 15px; } .stat-value { font-size: 25px; } .top-label { display: none; } }
+        @media (max-width: 450px) { .stats { grid-template-columns: 1fr 1fr; } .stat:last-child { grid-column: span 2; } .roster-head { align-items: stretch; flex-direction: column; } .search { max-width: none; } }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand"><span class="brand-mark">✳</span><span>ORBIT <span style="font-weight:400">/ CAMPUS</span></span></div>
+        <div class="top-label">STUDENT REGISTRY &nbsp;·&nbsp; CAMPUS EDITION</div>
+    </header>
+
+    <main>
+        <section class="intro">
+            <div>
+                <div class="eyebrow">College student services</div>
+                <h1>People make<br>the campus.</h1>
+                <p>A small, thoughtful home for your student directory.</p>
+            </div>
+            <div class="live-tag"><span class="live-dot"></span>Connected to Java</div>
+        </section>
+
+        <section class="stats" aria-label="Student summary">
+            <div class="stat"><div class="stat-label">STUDENTS</div><div class="stat-value" id="totalCount">—</div><div class="stat-detail">in the directory</div></div>
+            <div class="stat"><div class="stat-label">SECTIONS</div><div class="stat-value" id="sectionCount">—</div><div class="stat-detail">learning groups</div></div>
+            <div class="stat"><div class="stat-label">LATEST ADDITION</div><div class="stat-value" id="latestStudent" style="font-size:21px">—</div><div class="stat-detail">most recently added</div></div>
+        </section>
+
+        <section class="workspace">
+            <div class="panel">
+                <h2>Add a student</h2>
+                <p class="panel-note">Add a UID, name, and section. Leave the UID blank and Orbit will create one for you.</p>
+                <form id="studentForm">
+                    <label for="studentUid">Student UID</label>
+                    <input id="studentUid" name="uid" placeholder="Optional — generated automatically" maxlength="50">
+                    <div class="uid-input-note">Enter your own unique ID or leave it empty for an automatic UID.</div>
+                    <label for="studentName">Student name</label>
+                    <input id="studentName" name="name" placeholder="e.g. Aanya Kapoor" maxlength="60" required>
+                    <label for="studentSection">Section</label>
+                    <input id="studentSection" name="section" placeholder="e.g. A or 2B" maxlength="20" required>
+                    <button class="add-button" type="submit">＋ &nbsp; Add to directory</button>
+                    <div id="message" role="status"></div>
+                </form>
+                <p class="tiny-note">Your directory is saved by the Java app in a local data file. Keep the Java server window open while using this page.</p>
+            </div>
+
+            <div class="panel">
+                <div class="roster-head"><h2>Student directory</h2><input class="search" id="search" aria-label="Search students" placeholder="⌕  Search by name or UID"></div>
+                <div class="filter-label">FILTER STUDENTS BY SECTION</div>
+                <div class="filters" id="filters"></div>
+                <div class="student-list" id="studentList"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // The Java program is the source of truth for this student list.
+        let students = [];
+        let selectedSection = "All";
+
+        const studentList = document.getElementById("studentList");
+        const filters = document.getElementById("filters");
+        const search = document.getElementById("search");
+        const message = document.getElementById("message");
+
+        // Ask Java for the saved students, then draw them on the page.
+        async function loadStudents() {
+            const response = await fetch("/api/students");
+            students = await response.json();
+            drawPage();
+        }
+
+        function drawPage() {
+            document.getElementById("totalCount").textContent = students.length;
+            const sectionNames = [...new Set(students.map(student => student.section))];
+            document.getElementById("sectionCount").textContent = sectionNames.length;
+            document.getElementById("latestStudent").textContent = students.length ? students[students.length - 1].name : "—";
+            drawFilters(sectionNames);
+            drawStudents();
+        }
+
+        function drawFilters(sectionNames) {
+            filters.innerHTML = "";
+            const choices = ["All", ...sectionNames];
+            for (const section of choices) {
+                const button = document.createElement("button");
+                button.className = "filter" + (selectedSection === section ? " active" : "");
+                button.textContent = section === "All" ? "All sections" : "Section " + section;
+                button.addEventListener("click", function () {
+                    selectedSection = section;
+                    drawPage();
+                });
+                filters.appendChild(button);
+            }
+        }
+
+        function drawStudents() {
+            studentList.innerHTML = "";
+            const searchText = search.value.trim().toLowerCase();
+            let visibleCount = 0;
+
+            for (const student of students) {
+                const matchesSection = selectedSection === "All" || student.section === selectedSection;
+                const matchesSearch = student.name.toLowerCase().includes(searchText) || student.uid.toLowerCase().includes(searchText);
+                if (matchesSection && matchesSearch) {
+                    studentList.appendChild(makeStudentCard(student));
+                    visibleCount++;
+                }
+            }
+
+            if (visibleCount === 0) {
+                const empty = document.createElement("div");
+                empty.className = "empty";
+                empty.textContent = students.length ? "No students match this view." : "Your directory is ready for its first student.";
+                studentList.appendChild(empty);
+            }
+        }
+
+        function makeStudentCard(student) {
+            const card = document.createElement("article");
+            card.className = "student-card";
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            avatar.textContent = student.name.split(" ").map(word => word[0]).join("").slice(0, 2).toUpperCase();
+            const info = document.createElement("div");
+            info.className = "student-info";
+            const name = document.createElement("div");
+            name.className = "student-name";
+            name.textContent = student.name;
+            const uid = document.createElement("div");
+            uid.className = "student-uid";
+            uid.textContent = student.uid;
+            info.append(name, uid);
+            const section = document.createElement("span");
+            section.className = "section-pill";
+            section.textContent = "SECTION " + student.section.toUpperCase();
+            const removeButton = document.createElement("button");
+            removeButton.className = "remove";
+            removeButton.textContent = "Remove student";
+            removeButton.addEventListener("click", () => removeStudent(student.uid));
+            card.append(avatar, info, section, removeButton);
+            return card;
+        }
+
+        // Send a new name and section to Java. Java creates the UID and saves it.
+        document.getElementById("studentForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const form = new URLSearchParams(new FormData(event.target));
+            const response = await fetch("/api/students", { method: "POST", body: form });
+            if (response.ok) {
+                event.target.reset();
+                message.textContent = "Student added and saved.";
+                selectedSection = "All";
+                await loadStudents();
+            } else {
+                const errorText = await response.text();
+                message.textContent = response.status === 409 ? "That UID is already in use. Enter another UID." : errorText;
+            }
+        });
+
+        async function removeStudent(uid) {
+            await fetch("/api/students?uid=" + encodeURIComponent(uid), { method: "DELETE" });
+            message.textContent = "Student removed from the saved directory.";
+            await loadStudents();
+        }
+
+        search.addEventListener("input", drawStudents);
+        loadStudents().catch(() => {
+            studentList.textContent = "Start the Java app first, then refresh this page.";
+        });
+    </script>
+</body>
+</html>
