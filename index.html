@@ -55,8 +55,17 @@
         .student-name { font-weight: 750; }
         .student-uid { color: var(--muted); font-size: 11px; margin-top: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         .section-pill { color: var(--green); background: #eaf4ed; border-radius: 20px; padding: 6px 10px; font-size: 11px; font-weight: 750; white-space: nowrap; }
+        .action-row { display: flex; gap: 10px; margin-top: 18px; }
+        .add-button, .cancel-button { flex: 1; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        .add-button { color: white; background: var(--green); border: 0; }
+        .add-button:hover { background: #10573b; }
+        .cancel-button { border: 1px solid var(--line); background: #fff; color: var(--ink); display: none; }
+        .cancel-button.visible { display: inline-block; }
+        .edit { border: 1px solid #dfe8d5; color: var(--green); background: #f5faf5; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
+        .edit:hover { background: #ebf7ee; }
         .remove { border: 1px solid #ecd8d2; color: #914c3d; background: #fff9f7; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
         .remove:hover { background: #fce9e4; }
+        .student-actions { display: flex; gap: 8px; }
         .uid-input-note { color: var(--muted); font-size: 11px; margin-top: 6px; }
         .empty { padding: 36px 12px; text-align: center; color: var(--muted); }
         #message { min-height: 18px; margin-top: 10px; color: var(--green); font-size: 12px; }
@@ -88,7 +97,7 @@
 
         <section class="workspace">
             <div class="panel">
-                <h2>Add a student</h2>
+                <h2 id="formTitle">Add a student</h2>
                 <p class="panel-note">Add a UID, name, and section. Leave the UID blank and Orbit will create one for you.</p>
                 <form id="studentForm">
                     <label for="studentUid">Student UID</label>
@@ -98,7 +107,10 @@
                     <input id="studentName" name="name" placeholder="e.g. Aanya Kapoor" maxlength="60" required>
                     <label for="studentSection">Section</label>
                     <input id="studentSection" name="section" placeholder="e.g. A or 2B" maxlength="20" required>
-                    <button class="add-button" type="submit">＋ &nbsp; Add to directory</button>
+                    <div class="action-row">
+                        <button class="add-button" id="submitButton" type="submit">＋ &nbsp; Add to directory</button>
+                        <button class="cancel-button" id="cancelEdit" type="button">Cancel edit</button>
+                    </div>
                     <div id="message" role="status"></div>
                 </form>
                 <p class="tiny-note">Your directory is saved by the Java app in a local data file. Keep the Java server window open while using this page.</p>
@@ -122,6 +134,11 @@
         const filters = document.getElementById("filters");
         const search = document.getElementById("search");
         const message = document.getElementById("message");
+        const form = document.getElementById("studentForm");
+        const formTitle = document.getElementById("formTitle");
+        const submitButton = document.getElementById("submitButton");
+        const cancelEdit = document.getElementById("cancelEdit");
+        let editingUid = null;
 
         // Ask Java for the saved students, then draw them on the page.
         async function loadStudents() {
@@ -194,21 +211,66 @@
             const section = document.createElement("span");
             section.className = "section-pill";
             section.textContent = "SECTION " + student.section.toUpperCase();
+
+            const actions = document.createElement("div");
+            actions.className = "student-actions";
+            const editButton = document.createElement("button");
+            editButton.className = "edit";
+            editButton.textContent = "Edit";
+            editButton.addEventListener("click", () => startEdit(student));
+
             const removeButton = document.createElement("button");
             removeButton.className = "remove";
-            removeButton.textContent = "Remove student";
+            removeButton.textContent = "Remove";
             removeButton.addEventListener("click", () => removeStudent(student.uid));
-            card.append(avatar, info, section, removeButton);
+
+            actions.append(editButton, removeButton);
+            card.append(avatar, info, section, actions);
             return card;
         }
 
-        // Send a new name and section to Java. Java creates the UID and saves it.
-        document.getElementById("studentForm").addEventListener("submit", async function (event) {
+        function startEdit(student) {
+            editingUid = student.uid;
+            formTitle.textContent = "Edit student";
+            submitButton.textContent = "Save changes";
+            cancelEdit.classList.add("visible");
+            document.getElementById("studentUid").value = student.uid;
+            document.getElementById("studentName").value = student.name;
+            document.getElementById("studentSection").value = student.section;
+            document.getElementById("studentUid").focus();
+            message.textContent = "Editing " + student.name + ". Save when ready.";
+        }
+
+        function resetForm() {
+            editingUid = null;
+            form.reset();
+            formTitle.textContent = "Add a student";
+            submitButton.textContent = "＋  Add to directory";
+            cancelEdit.classList.remove("visible");
+            message.textContent = "";
+        }
+
+        form.addEventListener("submit", async function (event) {
             event.preventDefault();
-            const form = new URLSearchParams(new FormData(event.target));
-            const response = await fetch("/api/students", { method: "POST", body: form });
+            const formData = new URLSearchParams(new FormData(event.target));
+            if (editingUid) {
+                formData.set("currentUid", editingUid);
+                const response = await fetch("/api/students", { method: "PUT", body: formData });
+                if (response.ok) {
+                    resetForm();
+                    message.textContent = "Student updated and saved.";
+                    selectedSection = "All";
+                    await loadStudents();
+                } else {
+                    const errorText = await response.text();
+                    message.textContent = response.status === 409 ? "That UID is already in use. Enter another UID." : errorText;
+                }
+                return;
+            }
+
+            const response = await fetch("/api/students", { method: "POST", body: formData });
             if (response.ok) {
-                event.target.reset();
+                form.reset();
                 message.textContent = "Student added and saved.";
                 selectedSection = "All";
                 await loadStudents();
@@ -218,9 +280,14 @@
             }
         });
 
+        cancelEdit.addEventListener("click", resetForm);
+
         async function removeStudent(uid) {
             await fetch("/api/students?uid=" + encodeURIComponent(uid), { method: "DELETE" });
             message.textContent = "Student removed from the saved directory.";
+            if (editingUid === uid) {
+                resetForm();
+            }
             await loadStudents();
         }
 

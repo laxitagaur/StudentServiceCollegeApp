@@ -40,7 +40,7 @@ public class StudentWebServer {
         exchange.close();
     }
 
-    // Handle browser requests to list, add, or remove students.
+    // Handle browser requests to list, add, edit, or remove students.
     private static void handleStudents(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
 
@@ -61,12 +61,28 @@ public class StudentWebServer {
             } catch (IllegalArgumentException error) {
                 send(exchange, 409, error.getMessage(), "text/plain; charset=UTF-8");
             }
+        } else if (method.equals("PUT")) {
+            Map<String, String> form = readForm(exchange);
+            String currentUid = form.getOrDefault("currentUid", "").trim();
+            String uid = form.getOrDefault("uid", "").trim();
+            String name = form.getOrDefault("name", "").trim();
+            String section = form.getOrDefault("section", "").trim();
+            if (currentUid.isEmpty()) {
+                send(exchange, 400, "Student UID is required", "text/plain; charset=UTF-8");
+                return;
+            }
+            try {
+                Student updated = studentService.updateStudent(currentUid, uid, name, section);
+                send(exchange, 200, studentAsJson(updated), "application/json; charset=UTF-8");
+            } catch (IllegalArgumentException error) {
+                send(exchange, 409, error.getMessage(), "text/plain; charset=UTF-8");
+            }
         } else if (method.equals("DELETE")) {
             String uid = queryValue(exchange.getRequestURI().getRawQuery(), "uid");
             boolean removed = studentService.removeStudent(uid);
             send(exchange, removed ? 200 : 404, "{\"removed\":" + removed + "}", "application/json; charset=UTF-8");
         } else {
-            exchange.getResponseHeaders().set("Allow", "GET, POST, DELETE");
+            exchange.getResponseHeaders().set("Allow", "GET, POST, PUT, DELETE");
             send(exchange, 405, "Method not allowed", "text/plain; charset=UTF-8");
         }
     }

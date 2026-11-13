@@ -53,6 +53,44 @@ public class StudentService {
         return false;
     }
 
+    public synchronized Student updateStudent(String currentUid, String requestedUid, String name, String section) throws IOException {
+        String trimmedCurrentUid = currentUid == null ? "" : currentUid.trim();
+        String trimmedRequestedUid = requestedUid == null ? "" : requestedUid.trim();
+        String trimmedName = name == null ? "" : name.trim();
+        String trimmedSection = section == null ? "" : section.trim();
+
+        if (trimmedCurrentUid.isEmpty()) {
+            throw new IllegalArgumentException("Student UID is required");
+        }
+        if (trimmedName.isEmpty() || trimmedSection.isEmpty()) {
+            throw new IllegalArgumentException("Name and section are required");
+        }
+
+        Student existing = null;
+        int index = -1;
+        for (int i = 0; i < students.size(); i++) {
+            Student student = students.get(i);
+            if (student.getUid().equalsIgnoreCase(trimmedCurrentUid)) {
+                existing = student;
+                index = i;
+                break;
+            }
+        }
+
+        if (existing == null) {
+            throw new IllegalArgumentException("Student not found");
+        }
+
+        String nextUid = trimmedRequestedUid.isEmpty() ? trimmedCurrentUid : trimmedRequestedUid;
+        if (!nextUid.equalsIgnoreCase(trimmedCurrentUid) && containsUid(nextUid)) {
+            throw new IllegalArgumentException("That UID is already in use");
+        }
+
+        students.set(index, new Student(nextUid, trimmedName, trimmedSection));
+        saveStudents();
+        return students.get(index);
+    }
+
     public synchronized boolean removeStudent(String uid) throws IOException {
         boolean removed = false;
         for (int index = 0; index < students.size(); index++) {
